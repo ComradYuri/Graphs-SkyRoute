@@ -7,7 +7,7 @@ landmark_string = ""
 for key in landmark_choices.keys():
     landmark_string += (key + " - " + landmark_choices[key] + '\n')
 
-stations_under_construction = ['Moody Centre']
+stations_under_construction = ['Moody Centre', 'Olympic Village']
 
 
 def greet():
@@ -26,12 +26,12 @@ def set_start_and_end(start_point, end_point):
         change_point = input("What would you like to change? You can enter 'o' for 'origin', 'd' for 'destination', or "
                              "'b' for 'both': ")
         if change_point == 'b':
-            get_start()
-            get_end()
+            start_point = get_start()
+            end_point = get_end()
         elif change_point == 'o':
-            get_start()
+            start_point = get_start()
         elif change_point == 'd':
-            get_end()
+            end_point = get_end()
         else:
             print("Oops, that isn't 'o', 'd', or 'b''...")
             set_start_and_end(start_point, end_point)
@@ -45,6 +45,7 @@ def get_start():
     start_point_letter = input("Where are you coming from? Type in the corresponding letter: ")
     if start_point_letter in landmark_choices.keys():
         start_point = landmark_choices[start_point_letter]
+        print("You selected {} as your starting point.".format(start_point))
         return start_point
     else:
         print(" Sorry, that's not a landmark we have data on. Let's try this again")
@@ -55,18 +56,21 @@ def get_end():
     end_point_letter = input("Ok, where are you headed? Type in the corresponding letter: ")
     if end_point_letter in landmark_choices.keys():
         end_point = landmark_choices[end_point_letter]
+        print("You selected {} as your destination.".format(end_point))
         return end_point
     else:
-        print(" Sorry, that's not a landmark we have data on. Let's try this again")
+        print("Sorry, that's not a landmark we have data on. Let's try this again")
         get_end()
 
 
 def new_route(start_point=None, end_point=None):
     start_point, end_point = set_start_and_end(start_point, end_point)
     shortest_route = get_route(start_point, end_point)
-    if shortest_route:
+    if shortest_route and shortest_route != 'same route! Error':
         shortest_route_string = '\n'.join(shortest_route)
         print("The shortest metro route from {} to {} is:\n{}".format(start_point, end_point, shortest_route_string))
+    elif shortest_route == 'same route! Error':
+        pass
     else:
         print("Unfortunately, there is currently no path between {0} and {1} due to maintenance.".format(start_point,
                                                                                                          end_point))
@@ -83,11 +87,20 @@ def get_route(start_point, end_point):
     for start_station in start_stations:
         for end_station in end_stations:
             metro_system = get_active_stations() if stations_under_construction else vc_metro
-            route = bfs(vc_metro, start_station, end_station)
+            if len(stations_under_construction) > 0:
+                possible_route = dfs(metro_system, start_station, end_station)
+                if possible_route is None:
+                    return None
+            route = bfs(metro_system, start_station, end_station)
             if route:
                 routes.append(route)
-    shortest_route = min(routes, key=len)
-    return shortest_route
+    try:
+        shortest_route = min(routes, key=len)
+        return shortest_route
+    except ValueError:
+        shortest_route = 'same route! Error'
+        print("You are already at {}".format(start_point))
+        return shortest_route
 
 
 def show_landmarks():
@@ -106,10 +119,9 @@ def get_active_stations():
                 updated_metro[current_station] = set([])
     return updated_metro
 
-
 def goodbye():
     print("Thanks for using SkyRoute!")
 
 
-#skyroute()
-print(get_active_stations())
+skyroute()
+#print(get_active_stations())
